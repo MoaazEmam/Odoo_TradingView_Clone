@@ -1,0 +1,55 @@
+<odoo>
+
+  <!--Triggered when user clicks the "symbols" button-->
+  <record id="symbols_action" model="ir.actions.act_window">
+    <field name="name">Symbols</field>
+    <field name="res_model">tradingview.symbol</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+
+  <!--User by odoo to render the tree view-->
+  <record id="view_symbols_tree" model="ir.ui.view">
+    <field name="name">symbol tree</field>
+    <field name="model">tradingview.symbol</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="name" />
+        <field name="symbol" />
+        <field name="type" />
+        <field name="exchange" />
+        <field name="active" />
+      </tree>
+    </field>
+  </record>
+
+
+  <!--User by odoo to render the form view for editing or detailed view for a symbol-->
+  <record id="view_symbols_form" model="ir.ui.view">
+    <field name="name">tradingview form</field>
+    <field name="model">tradingview.symbol</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="name" />
+            <field name="symbol" />
+            <field name="slug" />
+            <field name="type" />
+            <field name="currency" />
+            <field name="exchange" />
+            <field name="region" />
+            <field name="sector" />
+            <field name="industry" />
+            <field name="isin" />
+            <field name="active" />
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <menuitem id="menu_symbols"
+    name="Symbols"
+    parent="market_symbols"
+    action="symbols_action" />
+</odoo>

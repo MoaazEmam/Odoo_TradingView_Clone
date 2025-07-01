@@ -1,2 +1,2 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_tradingview_clone_tradingview_clone,tradingview_clone.tradingview_clone,model_tradingview_clone_tradingview_clone,base.group_user,1,1,1,1
+access_tradingview_clone_tradingview_clone,tradingview.symbol,model_tradingview_symbol,base.group_user,1,1,1,1

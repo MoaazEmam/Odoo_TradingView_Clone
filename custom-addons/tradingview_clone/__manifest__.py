@@ -22,9 +22,9 @@ Long description of module's purpose
 
     # always loaded
     'data': [
-        # 'security/ir.model.access.csv',
-        'views/tradingview_symbol_views.xml',
-        'views/market_templates.xml',
+        'security/ir.model.access.csv',
+        'views/base_menu.xml',
+        'views/symbol_view.xml',
     ],
     'application': True,
 }

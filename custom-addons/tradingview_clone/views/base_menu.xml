@@ -1,0 +1,11 @@
+<odoo>
+  <menuitem
+    id="market_root_menu"
+    name="Market"
+  />
+  <menuitem
+  id="market_symbols"
+  name="Symbols"
+  parent="market_root_menu"
+  />
+</odoo>
