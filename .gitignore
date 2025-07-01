@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# IDE
+.vscode/
+*.swp
+
+# Odoo config
+*.log
+*.db
+*.zip
+*.egg-info
+.DS_Store
+
+# PostgreSQL dump files
+*.sql
+
+# Compiled assets
+*.pot
+*.mo
+
+# System
+*.~*
