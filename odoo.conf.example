@@ -1,0 +1,11 @@
+[options]
+addons_path = odoo-17/addons,custom-addons
+admin_passwd = YOUR_PASSWORD
+db_host = localhost
+db_port = 5432
+db_user = odoo
+db_password = YOUR_PASSWORD
+dbfilter = tradingview$
+xmlrpc_port = 8069
+log_level = info
+
