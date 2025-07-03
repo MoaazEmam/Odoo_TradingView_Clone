@@ -1,0 +1,41 @@
+<odoo>
+  <template id="market_page" name="Market Explorer Page">
+    <t t-call="website.layout">
+      <div class="container mt-5">
+        <div class="text-center mb-5">
+          <h1 class="fw-bold display-4">Explore the Markets</h1>
+          <p class="lead text-muted">Browse popular stocks, cryptocurrencies, forex pairs, and more.</p>
+        </div>
+
+        <t t-foreach="grouped_symbols.items()" t-as="group">
+          <div class="mb-4">
+            <h3 class="mb-3 text-capitalize">
+              <t t-esc="group[0]"/> Markets
+            </h3>
+
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+              <t t-foreach="group[1]" t-as="symbol">
+                <div class="col">
+                  <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                      <h5 class="card-title fw-semibold">
+                        <a t-att-href="'/market/' + symbol.slug" class="text-decoration-none text-dark">
+                          <t t-esc="symbol.symbol"/>
+                        </a>
+                      </h5>
+                      <p class="text-muted mb-1"><t t-esc="symbol.name"/></p>
+                      <p class="mb-0 small">
+                        Exchange: <strong><t t-esc="symbol.exchange"/></strong><br/>
+                        Currency: <strong><t t-esc="symbol.currency"/></strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </t>
+            </div>
+          </div>
+        </t>
+      </div>
+    </t>
+  </template>
+</odoo>

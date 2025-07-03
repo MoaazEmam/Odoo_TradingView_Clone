@@ -18,13 +18,15 @@ Long description of module's purpose
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base'],
+    'depends': ['base','website'],
 
     # always loaded
     'data': [
         'security/ir.model.access.csv',
         'views/base_menu.xml',
         'views/symbol_view.xml',
+        'views/market_view.xml',
+        'views/ir_cron.xml'
     ],
     'application': True,
 }

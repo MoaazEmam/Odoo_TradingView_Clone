@@ -26,3 +26,5 @@ odoo.conf
 
 # System
 *.~*
+
+custom-addons/tradingview_clone/secrets.py

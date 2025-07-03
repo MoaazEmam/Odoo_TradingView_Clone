@@ -1,0 +1,14 @@
+<odoo>
+    <data>
+        <record id="symbol_daily_sync" model="ir.cron">
+            <field name="name">Symbol Sync</field>
+            <field name="active" eval="True"/>
+            <field name="interval_type">days</field>
+            <field name="interval_number">1</field>
+            <field name="numbercall">1</field>
+            <field name="model_id" ref="model_tradingview_symbol"/>
+            <field name="state">code</field>
+            <field name="code">model.sync_symbols_from_apis()</field>
+        </record>
+    </data>
+</odoo>

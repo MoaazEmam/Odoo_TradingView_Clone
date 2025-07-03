@@ -19,4 +19,4 @@ class TradingViewSymbol(models.Model):
     ('forex', 'Forex'),
     ('commodity', 'Commodity'),
     ('index', 'Index'),
-], default='stock')
+    ], default='stock')
