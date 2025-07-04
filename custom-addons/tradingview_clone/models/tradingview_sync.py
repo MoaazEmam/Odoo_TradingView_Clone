@@ -18,10 +18,10 @@ class TradingViewSync(models.Model):
         indices_url=f"https://api.twelvedata.com/etfs?apikey={TWELVEDATA_API_KEY}"
         try:
             stocks = requests.get(stocks_url).json().get("data", [])[:250] #fmp api only allows 250 calls per day
-            crypto = requests.get(crypto_url).json().get("data", [])[:250]
-            forex = requests.get(forex_url).json().get("data", [])[:250]
-            commodities = requests.get(commodities_url).json().get("data", [])[:250]
-            indices = requests.get(indices_url).json().get("data", [])[:250]
+            crypto = requests.get(crypto_url).json().get("data", [])
+            forex = requests.get(forex_url).json().get("data", [])
+            commodities = requests.get(commodities_url).json().get("data", [])
+            indices = requests.get(indices_url).json().get("data", [])
         except Exception as e:
             _logger.error(f"Error fetching from TwelveData: {e}")
             return

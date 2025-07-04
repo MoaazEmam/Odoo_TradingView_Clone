@@ -8,34 +8,67 @@
         </div>
 
         <t t-foreach="grouped_symbols.items()" t-as="group">
-          <div class="mb-4">
-            <h3 class="mb-3 text-capitalize">
-              <t t-esc="group[0]"/> Markets
-            </h3>
+          <div class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="mb-0 text-capitalize">
+                <t t-esc="group[0]"/> Markets 
+                <small class="text-muted">(<t t-esc="group[1]['total_count']"/> total)</small>
+              </h3>
+              
+              <!-- Navigation Arrows -->
+              <div class="d-flex align-items-center">
+                <a t-if="group[1]['has_prev']" 
+                   t-att-href="'/market?' + group[0] + '_page=' + str(group[1]['prev_page'])" 
+                   class="btn btn-outline-secondary btn-sm me-2">
+                  <i class="fa fa-chevron-left"></i> Previous
+                </a>
+                <span class="text-muted mx-2">
+                  Page <t t-esc="group[1]['current_page'] + 1"/> of <t t-esc="group[1]['total_pages']"/>
+                </span>
+                <a t-if="group[1]['has_next']" 
+                   t-att-href="'/market?' + group[0] + '_page=' + str(group[1]['next_page'])" 
+                   class="btn btn-outline-secondary btn-sm ms-2">
+                  Next <i class="fa fa-chevron-right"></i>
+                </a>
+              </div>
+            </div>
 
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-              <t t-foreach="group[1]" t-as="symbol">
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
+              <t t-foreach="group[1]['symbols']" t-as="symbol">
                 <div class="col">
-                  <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body">
-                      <h5 class="card-title fw-semibold">
-                        <a t-att-href="'/market/' + symbol.slug" class="text-decoration-none text-dark">
+                  <a t-att-href="'/market/' + symbol.slug" class="text-decoration-none">
+                    <div class="card h-100 shadow-sm border-0 hover-shadow">
+                      <div class="card-body text-center">
+                        <h6 class="card-title fw-bold text-dark mb-2">
                           <t t-esc="symbol.symbol"/>
-                        </a>
-                      </h5>
-                      <p class="text-muted mb-1"><t t-esc="symbol.name"/></p>
-                      <p class="mb-0 small">
-                        Exchange: <strong><t t-esc="symbol.exchange"/></strong><br/>
-                        Currency: <strong><t t-esc="symbol.currency"/></strong>
-                      </p>
+                        </h6>
+                        <p class="text-muted small mb-2">
+                          <t t-esc="symbol.name"/>
+                        </p>
+                        <div class="small text-muted">
+                          <div><strong><t t-esc="symbol.exchange"/></strong></div>
+                          <div><t t-esc="symbol.currency"/></div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </a>
                 </div>
               </t>
             </div>
           </div>
         </t>
       </div>
+      
+      <style>
+        .hover-shadow:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+          transition: all 0.2s ease;
+        }
+        .card {
+          transition: all 0.2s ease;
+        }
+      </style>
     </t>
   </template>
 </odoo>
