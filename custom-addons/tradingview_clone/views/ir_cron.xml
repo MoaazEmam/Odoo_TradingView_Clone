@@ -10,5 +10,16 @@
             <field name="state">code</field>
             <field name="code">model.sync_symbols_from_apis()</field>
         </record>
+
+            <record id="ohlc_sync" model="ir.cron">
+            <field name="name">OHLC Sync</field>
+            <field name="active" eval="True"/>
+            <field name="interval_type">minutes</field>
+            <field name="interval_number">5</field>
+            <field name="numbercall">-1</field>
+            <field name="model_id" ref="model_tradingview_ohlc"/>
+            <field name="state">code</field>
+            <field name="code">model.sync_ohlc()</field>
+        </record>
     </data>
 </odoo>

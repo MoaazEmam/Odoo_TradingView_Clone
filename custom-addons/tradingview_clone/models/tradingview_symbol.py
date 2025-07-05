@@ -29,13 +29,11 @@ class TradingViewSymbol(models.Model):
 ####################################    SYNC FUNCTIONS  ####################################
 #since the twelvedata api doesnt provide all the fields we need
 #we will also use fmp
-class TradingViewSync(models.Model):
-    _inherit = 'tradingview.symbol'
 
     @api.model
     def sync_symbols_from_apis(self):
         _logger.info("Symbol sync started")
-        start_time=time.time
+        start_time=time.time()
         error=""
         status="success"
         try:
@@ -63,7 +61,7 @@ class TradingViewSync(models.Model):
             for i in indices: i['asset_type']='index'
 
             twelved_symbols=stocks+crypto+forex+commodities+indices
-            for symbol in twelved_symbols:
+            for i,symbol in enumerate(twelved_symbols):
                 symbol_code=symbol.get('symbol')
                 if not symbol_code:
                     continue
@@ -78,9 +76,9 @@ class TradingViewSync(models.Model):
                     industry=fmp_info.get('industry','')
                 name=symbol.get('name') or symbol.get('currency_base') or symbol_code
                 slug=str(symbol_code).lower().replace('/','')
-                exchange=symbol.get('exchange') or (symbol.get('available_exchanges'[0]) if symbol.get('available_exchange') else '')
+                exchange=symbol.get('exchange') or (symbol.get('available_exchanges')[0] if symbol.get('available_exchange') else '')
                 region=symbol.get('country','global')
-                currency=symbol.get('currency') or symbol.get('currency_qoute') or (symbol_code.split('/')[1] if '/' in symbol_code else '')
+                currency=symbol.get('currency') or symbol.get('currency_quote') or (symbol_code.split('/')[1] if '/' in symbol_code else '')
                 industry=industry or symbol.get('category','')
                 values={
                     'name':name,
@@ -95,12 +93,15 @@ class TradingViewSync(models.Model):
                     'active':True,
                     'type':symbol.get('asset_type','stock')
                 }
-                record=self.search([('symbol','=',symbol_code)],limit=1)
+                record=self.sudo().search([('symbol','=',symbol_code)],limit=1)
                 try:
                     if record:
-                        record.write(values)
+                        record.sudo().write(values)
                     else:
-                        self.create(values)
+                        self.sudo().create(values)
+                        
+                    if i%50==0:
+                        self.env.cr.commit()
                 except Exception as e:
                     _logger.error(f"Error saving symbol {symbol_code}: {e}")
             _logger.info(f"Done fetching data")
