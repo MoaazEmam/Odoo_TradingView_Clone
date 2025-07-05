@@ -11,3 +11,7 @@ class TradingViewOhlc(models.Model):
     low = fields.Float()
     close = fields.Float()
     volume = fields.Float()
+    
+    
+####################################    SYNC FUNCTIONS  ####################################
+    
