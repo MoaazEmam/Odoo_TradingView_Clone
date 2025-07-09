@@ -28,3 +28,4 @@ odoo.conf
 *.~*
 
 custom-addons/tradingview_clone/secrets.py
+custom-addons/yhallsym.txt

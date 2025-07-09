@@ -4,6 +4,8 @@ import time
 from ..secrets import TWELVEDATA_API_KEY,FMP_API_KEY
 _logger=logging.getLogger(__name__)
 
+#after alot of searching, ive decided to use an external source that scraps yahoo finance for all tickers
+#and then use those tickers with yfinance to get all its data.
 class TradingViewSymbol(models.Model):
     _name='tradingview.symbol'
     _description='Trading Symbol'
