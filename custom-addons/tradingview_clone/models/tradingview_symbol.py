@@ -4,8 +4,6 @@ import time
 from ..secrets import TWELVEDATA_API_KEY,FMP_API_KEY
 _logger=logging.getLogger(__name__)
 
-#after alot of searching, ive decided to use an external source that scraps yahoo finance for all tickers
-#and then use those tickers with yfinance to get all its data.
 class TradingViewSymbol(models.Model):
     _name='tradingview.symbol'
     _description='Trading Symbol'
@@ -98,9 +96,9 @@ class TradingViewSymbol(models.Model):
                 record=self.sudo().search([('symbol','=',symbol_code)],limit=1)
                 try:
                     if record:
-                        record.sudo().write(values)
+                        record.write(values)
                     else:
-                        self.sudo().create(values)
+                        self.create(values)
                         
                     if i%50==0:
                         self.env.cr.commit()

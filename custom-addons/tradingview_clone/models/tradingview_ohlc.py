@@ -1,6 +1,7 @@
 from odoo import models,fields,api
 import yfinance as yf
 import requests,logging
+import time
 from datetime import datetime
 from ..secrets import TWELVEDATA_API_KEY
 _logger=logging.getLogger(__name__)
@@ -19,6 +20,8 @@ class TradingViewOhlc(models.Model):
     
     
 ####################################    SYNC FUNCTIONS  ####################################
+#NOTE:
+#many errors appear as a result of the not all symbols being available on yfinance
     @staticmethod
     def td_to_yfinance(symbol,asset_type):
         asset_type=asset_type.lower().strip()
@@ -110,25 +113,44 @@ class TradingViewOhlc(models.Model):
                     _logger.error(f"Error validating symbol {yf_symbol}")
                     continue
                 
-                data=ticker.history(period="1mo",interval="1d")
-                if data.empty:
-                    #_logger.warning(f"No historical data for {yf_symbol}")
+                try:
+                    data=ticker.history(period="5min",interval="1min")
+                    if data.empty:
+                        #_logger.warning(f"No historical data for {yf_symbol}")
+                        self.td_fallback(symbol)
+                        continue
+                except Exception as e:
+                    _logger.error(f"Failed to fetch data for {yf_symbol}: {e}")
                     self.td_fallback(symbol)
                     continue
-                
                 for timestamp,row in data.iterrows():
-                    self.sudo().create({
-                        'symbol_id':symbol.id,
-                        'timestamp':timestamp.to_pydatetime().replace(tzinfo=None),
-                        'open':float(row['Open']) or 0,
-                        'high':float(row['High']) or 0,
-                        'low':float(row['Low']) or 0,
-                        'close':float(row['Close']) or 0,
-                        'volume':float(row['Volume']) or 0
-                    })
+                    existing_record = self.sudo().search([
+                        ('symbol_id', '=', symbol.id),
+                        ('timestamp', '=', timestamp.to_pydatetime().replace(tzinfo=None))])
+                    if not existing_record:
+                        self.create({
+                            'symbol_id':symbol.id,
+                            'timestamp':timestamp.to_pydatetime().replace(tzinfo=None),
+                            'open':float(row['Open']) or 0,
+                            'high':float(row['High']) or 0,
+                            'low':float(row['Low']) or 0,
+                            'close':float(row['Close']) or 0,
+                            'volume':float(row['Volume']) or 0
+                        })
+                    else:
+                        self.write({
+                            'symbol_id':symbol.id,
+                            'timestamp':timestamp.to_pydatetime().replace(tzinfo=None),
+                            'open':float(row['Open']) or 0,
+                            'high':float(row['High']) or 0,
+                            'low':float(row['Low']) or 0,
+                            'close':float(row['Close']) or 0,
+                            'volume':float(row['Volume']) or 0
+                        })
                 #commit every 50 records
                 if i%50==0:
                     self.env.cr.commit()
+                time.sleep(0.5)
             _logger.info("OHLC sync finished")
         except Exception as e:
             _logger.error(f"Failed to sync ohlc data: {e}")
@@ -139,22 +161,39 @@ class TradingViewOhlc(models.Model):
     def td_fallback(self,symbol):
         #_logger.info(f"yfinance failed, attempting twelvedata: {symbol.symbol}")
         try:
-            url=f"https://api.twelvedata.com/time_series?symbol={symbol.symbol}&interval=1min&apikey={TWELVEDATA_API_KEY}"
+            url=f"https://api.twelvedata.com/time_series?symbol={symbol.symbol}&interval=1day&apikey={TWELVEDATA_API_KEY}"
             response=requests.get(url)
             if response.status_code!=200:
                 #_logger.warning(f"Failed to fetch OHLC for {symbol.symbol}")
                 return
+            if response.status_code==429 or (response.json().get("message") and "out" in response.json().get("message")):
+                _logger.warning("Out of TD API credits, exiting")
+                return
             data=response.json().get('values',[])
             for item in data:
-                self.sudo().create({
-                    'symbol_id':symbol.id,
-                    'timestamp':datetime.strptime(item.get("datetime"),"%Y-%m-%d %H:%M:%S"),
-                    'open':float(item.get('open')) or 0,
-                    'high':float(item.get('high')) or 0,
-                    'low':float(item.get('low')) or 0,
-                    'close':float(item.get('close')) or 0,
-                    'volume':float(item.get('volume')) or 0
-                })
+                existing_record = self.sudo().search([
+                        ('symbol_id', '=', symbol.id),
+                        datetime.strptime(item.get("datetime"),"%Y-%m-%d %H:%M:%S")])
+                if not existing_record:
+                    self.create({
+                        'symbol_id':symbol.id,
+                        'timestamp':datetime.strptime(item.get("datetime"),"%Y-%m-%d %H:%M:%S"),
+                        'open':float(item.get('open')) or 0,
+                        'high':float(item.get('high')) or 0,
+                        'low':float(item.get('low')) or 0,
+                        'close':float(item.get('close')) or 0,
+                        'volume':float(item.get('volume')) or 0
+                    })
+                else:
+                    self.write({
+                        'symbol_id':symbol.id,
+                        'timestamp':datetime.strptime(item.get("datetime"),"%Y-%m-%d %H:%M:%S"),
+                        'open':float(item.get('open')) or 0,
+                        'high':float(item.get('high')) or 0,
+                        'low':float(item.get('low')) or 0,
+                        'close':float(item.get('close')) or 0,
+                        'volume':float(item.get('volume')) or 0
+                    })
             self.env.cr.commit()
             #_logger.info("Fetched data from twelvedata")
         except Exception as e:
