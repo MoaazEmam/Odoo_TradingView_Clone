@@ -1,7 +1,7 @@
 from odoo import models,fields,api
 import requests,logging
+import yfinance as yf
 import time
-from ..secrets import TWELVEDATA_API_KEY,FMP_API_KEY
 _logger=logging.getLogger(__name__)
 
 #after alot of searching, ive decided to use an external source that scraps yahoo finance for all tickers
@@ -29,8 +29,20 @@ class TradingViewSymbol(models.Model):
 
 
 ####################################    SYNC FUNCTIONS  ####################################
-#since the twelvedata api doesnt provide all the fields we need
-#we will also use fmp
+
+    @staticmethod
+    def decide_type(info):
+        quote_type=info.get("quoteType","").lower()
+        market=info.get("market","").lower()
+        if quote_type=='cryptocurrency':
+            return 'crypto'
+        elif quote_type=='commodity' or quote_type=='index':
+            return quote_type
+        elif market in ['fx','forex']:
+            return 'forex'
+        else: 
+            return 'stock'
+        
 
     @api.model
     def sync_symbols_from_apis(self):
@@ -39,52 +51,29 @@ class TradingViewSymbol(models.Model):
         error=""
         status="success"
         try:
-            stocks_url=f"https://api.twelvedata.com/stocks?apikey={TWELVEDATA_API_KEY}"
-            crypto_url=f"https://api.twelvedata.com/cryptocurrencies?apikey={TWELVEDATA_API_KEY}"
-            forex_url=f"https://api.twelvedata.com/forex_pairs?apikey={TWELVEDATA_API_KEY}"
-            commodities_url=f"https://api.twelvedata.com/commodities?apikey={TWELVEDATA_API_KEY}"
-            indices_url=f"https://api.twelvedata.com/etfs?apikey={TWELVEDATA_API_KEY}"
-            try:
-                stocks = requests.get(stocks_url).json().get("data", [])[:250] #fmp api only allows 250 calls per day
-                crypto = requests.get(crypto_url).json().get("data", [])
-                forex = requests.get(forex_url).json().get("data", [])
-                commodities = requests.get(commodities_url).json().get("data", [])
-                indices = requests.get(indices_url).json().get("data", [])
-            except Exception as e:
-                _logger.error(f"Error fetching from TwelveData: {e}")
-                error="Error fetching from TwelveData: {e}"
-                status="failure"
-                return
-
-            for s in stocks: s['asset_type']='stock'
-            for cr in crypto: cr['asset_type']='crypto'
-            for f in forex: f['asset_type']='forex'
-            for co in commodities: co['asset_type']='commodity'
-            for i in indices: i['asset_type']='index'
-
-            twelved_symbols=stocks+crypto+forex+commodities+indices
-            for i,symbol in enumerate(twelved_symbols):
-                symbol_code=symbol.get('symbol')
-                if not symbol_code:
+            with open("custom-addons/tradingview_clone/yhallsym.txt", "r", encoding='UTF-8') as f:
+                symbol_dict=eval(f.read())
+            for i,(symbol,name) in enumerate(symbol_dict.items()):
+                try:
+                    ticker=yf.Ticker(symbol)
+                    info=ticker.info
+                except Exception as e:
+                    _logger.error(f"Error fetching info for {symbol}: {e}")
+                    error=f"Error fetching info for {symbol}: {e}"
+                    status="failure"
+                    if "Many" in e:
+                        _logger.warning("API rate limit reached, backing off")
+                        return
                     continue
-                #fmp only provides data for stocks
-                #other types may not need sector and industry info
-                sector=''
-                industry=''
-
-                if symbol.get('asset_type') =='stock':
-                    fmp_info=self._fetch_info_fmp(symbol_code) or {}
-                    sector=fmp_info.get('sector')
-                    industry=fmp_info.get('industry','')
-                name=symbol.get('name') or symbol.get('currency_base') or symbol_code
-                slug=str(symbol_code).lower().replace('/','')
-                exchange=symbol.get('exchange') or (symbol.get('available_exchanges')[0] if symbol.get('available_exchange') else '')
-                region=symbol.get('country','global')
-                currency=symbol.get('currency') or symbol.get('currency_quote') or (symbol_code.split('/')[1] if '/' in symbol_code else '')
-                industry=industry or symbol.get('category','')
+                slug=str(symbol).lower().replace('/','')
+                exchange=info.get('exchange')
+                region=info.get('country','global')
+                currency=info.get('currency')
+                sector=info.get('sector')
+                industry=info.get('industry','')
                 values={
                     'name':name,
-                    'symbol':symbol_code,
+                    'symbol':symbol,
                     'slug':slug,
                     'exchange':exchange,
                     'region':region,
@@ -93,19 +82,19 @@ class TradingViewSymbol(models.Model):
                     'industry':industry,
                     'isin':'',
                     'active':True,
-                    'type':symbol.get('asset_type','stock')
+                    'type':self.decide_type(info)
                 }
-                record=self.sudo().search([('symbol','=',symbol_code)],limit=1)
+                record=self.sudo().search([('symbol','=',symbol)],limit=1)
                 try:
                     if record:
                         record.sudo().write(values)
                     else:
                         self.sudo().create(values)
-                        
                     if i%50==0:
                         self.env.cr.commit()
                 except Exception as e:
-                    _logger.error(f"Error saving symbol {symbol_code}: {e}")
+                    _logger.error(f"Error saving symbol {symbol}: {e}")
+                time.sleep(0.9)
             _logger.info(f"Done fetching data")
         except Exception as e:
             status="failure"
@@ -120,20 +109,3 @@ class TradingViewSymbol(models.Model):
                 'error_message': error,
                 'duration_seconds': duration
             })
-
-
-    def _fetch_info_fmp(self, symbol_code):
-        url=f"https://financialmodelingprep.com/stable/profile?symbol={symbol_code}&apikey={FMP_API_KEY}"
-        try:
-            response=requests.get(url,timeout=10)
-            if response.status_code==200:
-                data=response.json()
-                if data and isinstance(data,list):
-                    item=data[0]
-                    return{
-                        'sector':item.get('sector'),
-                        'industry':item.get('industry'),
-                    }
-        except Exception as e:
-            _logger.warning(f"FMP fetch failed for {symbol_code}")
-            return {}
