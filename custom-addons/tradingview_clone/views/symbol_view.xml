@@ -42,6 +42,9 @@
             <field name="industry" />
             <field name="isin" />
             <field name="active" />
+            <field name="tech_supported" />
+            <field name="news_supported" />
+            <field name="forum_post_id" />
           </group>
         </sheet>
       </form>

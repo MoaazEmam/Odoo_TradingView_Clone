@@ -17,6 +17,9 @@ class TradingViewSymbol(models.Model):
     industry = fields.Char() # Industry classification (if applicable)
     isin = fields.Char() # International Securities Identification Number (optional)
     active = fields.Boolean(default=True)
+    tech_supported=fields.Boolean(default=True)
+    news_supported=fields.Boolean(default=True)
+    forum_post_id=fields.Many2one('forum.post',string='Forum Thread')
     type = fields.Selection([
     ('stock', 'Stock'),
     ('crypto', 'Cryptocurrency'),
@@ -61,6 +64,7 @@ class TradingViewSymbol(models.Model):
             for i in indices: i['asset_type']='index'
 
             twelved_symbols=stocks+crypto+forex+commodities+indices
+            batch=[]
             for i,symbol in enumerate(twelved_symbols):
                 symbol_code=symbol.get('symbol')
                 if not symbol_code:
@@ -91,19 +95,34 @@ class TradingViewSymbol(models.Model):
                     'industry':industry,
                     'isin':'',
                     'active':True,
+                    'tech_supported':True,
                     'type':symbol.get('asset_type','stock')
                 }
                 record=self.sudo().search([('symbol','=',symbol_code)],limit=1)
                 try:
-                    if record:
-                        record.write(values)
+                    if not record and not any(item['symbol'] == symbol_code for item in batch):
+                        forum=self.env['forum.forum'].search([],limit=1)
+                        post=self.env['forum.post'].create({
+                            'forum_id':forum.id if forum else False,
+                            'name':f"{symbol_code} Discussion",
+                            'content':f"Discuss {name} ({symbol_code} here. News, future events, and more!)",
+                            'tag_ids':[],
+                            'state':'active',
+                            'moderator_id':self.env.ref('base.user_admin').id 
+                        })
+                        values['forum_post_id']=post.id
+                        batch.append(values)
                     else:
-                        self.create(values)
-                        
+                        record.write(values)
                     if i%50==0:
+                        self.create(batch)
                         self.env.cr.commit()
+                        batch=[]
                 except Exception as e:
                     _logger.error(f"Error saving symbol {symbol_code}: {e}")
+            if batch:
+                self.create(batch)
+                self.env.cr.commit()
             _logger.info(f"Done fetching data")
         except Exception as e:
             status="failure"

@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from ..secrets import TWELVEDATA_API_KEY
 _logger=logging.getLogger(__name__)
-
+td_call_count=0
 class TradingViewOhlc(models.Model):
     _name='tradingview.ohlc'
     _description='Symbol candle data'
@@ -96,6 +96,7 @@ class TradingViewOhlc(models.Model):
         _logger.info("OHLC sync started")
         try:
             active_symbols=self.env['tradingview.symbol'].search([('active','=',True)])
+            batch=[]
             for i,symbol in enumerate(active_symbols):
                 yf_symbol=self.td_to_yfinance(symbol.symbol,symbol.type)
                 
@@ -114,7 +115,7 @@ class TradingViewOhlc(models.Model):
                     continue
                 
                 try:
-                    data=ticker.history(period="5min",interval="1min")
+                    data=ticker.history(period="1mo",interval="5d")
                     if data.empty:
                         #_logger.warning(f"No historical data for {yf_symbol}")
                         self.td_fallback(symbol)
@@ -127,20 +128,11 @@ class TradingViewOhlc(models.Model):
                     existing_record = self.sudo().search([
                         ('symbol_id', '=', symbol.id),
                         ('timestamp', '=', timestamp.to_pydatetime().replace(tzinfo=None))])
-                    if not existing_record:
-                        self.create({
+                    clean_ts=timestamp.to_pydatetime().replace(tzinfo=None)
+                    if not existing_record and any(item['symbol_id'] == symbol.id and item['timestamp'] == clean_ts for item in batch):
+                        batch.append({
                             'symbol_id':symbol.id,
-                            'timestamp':timestamp.to_pydatetime().replace(tzinfo=None),
-                            'open':float(row['Open']) or 0,
-                            'high':float(row['High']) or 0,
-                            'low':float(row['Low']) or 0,
-                            'close':float(row['Close']) or 0,
-                            'volume':float(row['Volume']) or 0
-                        })
-                    else:
-                        self.write({
-                            'symbol_id':symbol.id,
-                            'timestamp':timestamp.to_pydatetime().replace(tzinfo=None),
+                            'timestamp':clean_ts,
                             'open':float(row['Open']) or 0,
                             'high':float(row['High']) or 0,
                             'low':float(row['Low']) or 0,
@@ -149,17 +141,22 @@ class TradingViewOhlc(models.Model):
                         })
                 #commit every 50 records
                 if i%50==0:
+                    self.create(batch)
                     self.env.cr.commit()
-                time.sleep(0.5)
+                    batch=[]
+                time.sleep(7.5)
+            if batch:
+                self.create(batch)
+                self.env.cr.commit()
             _logger.info("OHLC sync finished")
         except Exception as e:
             _logger.error(f"Failed to sync ohlc data: {e}")
-        finally: 
-            #commit the rest
-            self.env.cr.commit()
-            
     def td_fallback(self,symbol):
         #_logger.info(f"yfinance failed, attempting twelvedata: {symbol.symbol}")
+        global td_call_count
+        if td_call_count >= 400:
+            _logger.warning("TwelveData API call limit reached (400). Skipping.")
+            return
         try:
             url=f"https://api.twelvedata.com/time_series?symbol={symbol.symbol}&interval=1day&apikey={TWELVEDATA_API_KEY}"
             response=requests.get(url)
@@ -184,17 +181,8 @@ class TradingViewOhlc(models.Model):
                         'close':float(item.get('close')) or 0,
                         'volume':float(item.get('volume')) or 0
                     })
-                else:
-                    self.write({
-                        'symbol_id':symbol.id,
-                        'timestamp':datetime.strptime(item.get("datetime"),"%Y-%m-%d %H:%M:%S"),
-                        'open':float(item.get('open')) or 0,
-                        'high':float(item.get('high')) or 0,
-                        'low':float(item.get('low')) or 0,
-                        'close':float(item.get('close')) or 0,
-                        'volume':float(item.get('volume')) or 0
-                    })
-            self.env.cr.commit()
+                self.env.cr.commit()
+                td_call_count+=1
             #_logger.info("Fetched data from twelvedata")
         except Exception as e:
             _logger.error(f"Failed to sync ohlc data: {e}")

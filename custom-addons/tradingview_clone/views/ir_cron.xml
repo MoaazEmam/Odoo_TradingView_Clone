@@ -2,10 +2,10 @@
     <data>
         <record id="symbol_daily_sync" model="ir.cron">
             <field name="name">Symbol Sync</field>
-            <field name="active" eval="True"/>
+            <field name="active" eval="False"/>
             <field name="interval_type">days</field>
-            <field name="interval_number">1</field>
-            <field name="numbercall">1</field>
+            <field name="interval_number">-1</field>
+            <field name="numbercall">-1</field>
             <field name="model_id" ref="model_tradingview_symbol"/>
             <field name="state">code</field>
             <field name="code">model.sync_symbols_from_apis()</field>
@@ -13,7 +13,7 @@
 
         <record id="ohlc_sync" model="ir.cron">
             <field name="name">OHLC Sync</field>
-            <field name="active" eval="True"/>
+            <field name="active" eval="False"/>
             <field name="interval_type">minutes</field>
             <field name="interval_number">5</field>
             <field name="numbercall">-1</field>
@@ -24,13 +24,35 @@
 
         <record id="technical_indicators_sync" model="ir.cron">
             <field name="name">Technical Indicators Sync</field>
-            <field name="active" eval="True"/>
+            <field name="active" eval="False"/>
             <field name="interval_type">minutes</field>
             <field name="interval_number">15</field>
             <field name="numbercall">-1</field>
             <field name="model_id" ref="model_tradingview_technical"/>
             <field name="state">code</field>
             <field name="code">model.sync_technical()</field>
+        </record>
+
+        <record id="news_sync" model="ir.cron">
+            <field name="name">News Sync</field>
+            <field name="active" eval="False"/>
+            <field name="interval_type">hours</field>
+            <field name="interval_number">6</field>
+            <field name="numbercall">-1</field>
+            <field name="model_id" ref="model_tradingview_news"/>
+            <field name="state">code</field>
+            <field name="code">model.sync_news()</field>
+        </record>
+
+        <record id="event_sync" model="ir.cron">
+            <field name="name">Event Sync</field>
+            <field name="active" eval="False"/>
+            <field name="interval_type">days</field>
+            <field name="interval_number">1</field>
+            <field name="numbercall">-1</field>
+            <field name="model_id" ref="model_tradingview_event"/>
+            <field name="state">code</field>
+            <field name="code">model.sync_events()</field>
         </record>
     </data>
 </odoo>
