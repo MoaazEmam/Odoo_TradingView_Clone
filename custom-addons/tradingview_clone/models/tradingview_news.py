@@ -34,7 +34,7 @@ class TradingViewNews(models.Model):
                     _logger.warning(f"{symbol.symbol} is not supported")
                     symbol.write({'news_supported':False})
                     self.env.cr.commit()
-                    time.sleep(7.5)
+                    time.sleep(2)
                     continue
                 print(f"Got news for symbol {symbol.symbol}: {news_dict}")
                 for news in news_dict:
@@ -63,7 +63,7 @@ class TradingViewNews(models.Model):
                 self.create(batch)
                 self.env.cr.commit()
                 batch=[]
-            time.sleep(5)
+            time.sleep(2)
         if batch:
             self.create(batch)
             self.env.cr.commit()

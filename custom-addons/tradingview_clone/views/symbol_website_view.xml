@@ -1,0 +1,28 @@
+<odoo>
+  <template id="symbol_page" name="Market Symbol Website Page">
+    <t t-call="website.layout">
+      <div class="container mt-5">
+        <div class="text-center mb-4">
+          <h1 class="fw-bold"><t t-out="symbol.symbol"/></h1>
+          <p class="lead text-muted"><t t-out="symbol.name"/></p>
+        </div>
+
+        <div class="row justify-content-center">
+          <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+              <div class="card-body">
+                <h5 class="card-title">Details</h5>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item"><strong>Symbol:</strong> <t t-out="symbol.symbol"/></li>
+                  <li class="list-group-item"><strong>Name:</strong> <t t-out="symbol.name"/></li>
+                  <li class="list-group-item"><strong>Exchange:</strong> <t t-out="symbol.exchange"/></li>
+                  <li class="list-group-item"><strong>Currency:</strong> <t t-out="symbol.currency"/></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </t>
+  </template>
+</odoo>

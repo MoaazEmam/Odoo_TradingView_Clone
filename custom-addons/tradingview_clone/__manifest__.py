@@ -25,6 +25,7 @@ Long description of module's purpose
         'security/ir.model.access.csv',
         'views/base_menu.xml',
         'views/symbol_view.xml',
+        'views/symbol_website_view.xml',
         'views/market_view.xml',
         'views/ir_cron.xml'
     ],

@@ -32,9 +32,9 @@ class TradingViewSymbol(models.Model):
 ####################################    SYNC FUNCTIONS  ####################################
 #since the twelvedata api doesnt provide all the fields we need
 #we will also use fmp
-
     @api.model
     def sync_symbols_from_apis(self):
+        fmp_calls=0
         _logger.info("Symbol sync started")
         start_time=time.time()
         error=""
@@ -46,7 +46,7 @@ class TradingViewSymbol(models.Model):
             commodities_url=f"https://api.twelvedata.com/commodities?apikey={TWELVEDATA_API_KEY}"
             indices_url=f"https://api.twelvedata.com/etfs?apikey={TWELVEDATA_API_KEY}"
             try:
-                stocks = requests.get(stocks_url).json().get("data", [])[:250] #fmp api only allows 250 calls per day
+                stocks = requests.get(stocks_url).json().get("data", []) #fmp api only allows 250 calls per day
                 crypto = requests.get(crypto_url).json().get("data", [])
                 forex = requests.get(forex_url).json().get("data", [])
                 commodities = requests.get(commodities_url).json().get("data", [])
@@ -74,10 +74,11 @@ class TradingViewSymbol(models.Model):
                 sector=''
                 industry=''
 
-                if symbol.get('asset_type') =='stock':
+                if symbol.get('asset_type') =='stock' and fmp_calls<=250:
                     fmp_info=self._fetch_info_fmp(symbol_code) or {}
                     sector=fmp_info.get('sector')
                     industry=fmp_info.get('industry','')
+                    fmp_calls+=1
                 name=symbol.get('name') or symbol.get('currency_base') or symbol_code
                 slug=str(symbol_code).lower().replace('/','')
                 exchange=symbol.get('exchange') or (symbol.get('available_exchanges')[0] if symbol.get('available_exchange') else '')

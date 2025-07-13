@@ -2,20 +2,61 @@
   <template id="market_page" name="Market Explorer Page">
     <t t-call="website.layout">
       <div class="container mt-5">
-        <div class="text-center mb-5">
+        <div class="text-center mb-4">
           <h1 class="fw-bold display-4">Explore the Markets</h1>
-          <p class="lead text-muted">Browse popular stocks, cryptocurrencies, forex pairs, and more.</p>
+          <p class="lead text-muted">Browse stocks, crypto, forex and more.</p>
         </div>
 
+        <!-- FILTERS -->
+        <form method="get" action="/market" class="row g-3 mb-4">
+          <div class="col-md-3">
+            <input type="text" class="form-control" name="q" t-att-value="applied_filters.get('q', '')" placeholder="Search symbol or name"/>
+          </div>
+          <div class="col-md-2">
+            <select class="form-select" name="region">
+              <option value="">Region</option>
+              <t t-foreach="filters['regions']" t-as="r">
+                <option t-att-selected="applied_filters.get('region') == r" t-att-value="r"><t t-out="r"/></option>
+              </t>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select class="form-select" name="sector">
+              <option value="">Sector</option>
+              <t t-foreach="filters['sectors']" t-as="s">
+                <option t-att-selected="applied_filters.get('sector') == s" t-att-value="s"><t t-out="s"/></option>
+              </t>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select class="form-select" name="exchange">
+              <option value="">Exchange</option>
+              <t t-foreach="filters['exchanges']" t-as="e">
+                <option t-att-selected="applied_filters.get('exchange') == e" t-att-value="e"><t t-out="e"/></option>
+              </t>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select class="form-select" name="type">
+              <option value="">Type</option>
+              <t t-foreach="filters['types']" t-as="t">
+                <option t-att-selected="applied_filters.get('type') == t[0]" t-att-value="t[0]"><t t-out="t[1]"/></option>
+              </t>
+            </select>
+          </div>
+          <div class="col-md-1">
+            <button class="btn btn-primary w-100" type="submit">Apply</button>
+          </div>
+        </form>
+
+        <!-- SYMBOL GROUPS -->
         <t t-foreach="grouped_symbols.items()" t-as="group">
           <div class="mb-5">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h3 class="mb-0 text-capitalize">
-                <t t-esc="group[0]"/> Markets 
-                <small class="text-muted">(<t t-esc="group[1]['total_count']"/> total)</small>
+                <t t-out="group[0]"/> Markets 
+                <small class="text-muted">(<t t-out="group[1]['total_count']"/> total)</small>
               </h3>
-              
-              <!-- Navigation Arrows -->
               <div class="d-flex align-items-center">
                 <a t-if="group[1]['has_prev']" 
                    t-att-href="'/market?' + group[0] + '_page=' + str(group[1]['prev_page'])" 
@@ -23,7 +64,7 @@
                   <i class="fa fa-chevron-left"></i> Previous
                 </a>
                 <span class="text-muted mx-2">
-                  Page <t t-esc="group[1]['current_page'] + 1"/> of <t t-esc="group[1]['total_pages']"/>
+                  Page <t t-out="group[1]['current_page'] + 1"/> of <t t-out="group[1]['total_pages']"/>
                 </span>
                 <a t-if="group[1]['has_next']" 
                    t-att-href="'/market?' + group[0] + '_page=' + str(group[1]['next_page'])" 
@@ -33,21 +74,19 @@
               </div>
             </div>
 
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
               <t t-foreach="group[1]['symbols']" t-as="symbol">
                 <div class="col">
-                  <a t-att-href="'/market/' + symbol.slug" class="text-decoration-none">
+                  <a t-att-href="'/market/' + symbol.slug" class="text-decoration-none text-dark h-100 w-100 d-block">
                     <div class="card h-100 shadow-sm border-0 hover-shadow">
                       <div class="card-body text-center">
-                        <h6 class="card-title fw-bold text-dark mb-2">
-                          <t t-esc="symbol.symbol"/>
+                        <h6 class="card-title fw-bold text-dark mb-1">
+                          <t t-out="symbol.symbol"/>
                         </h6>
-                        <p class="text-muted small mb-2">
-                          <t t-esc="symbol.name"/>
-                        </p>
+                        <p class="text-muted small mb-2"><t t-out="symbol.name"/></p>
                         <div class="small text-muted">
-                          <div><strong><t t-esc="symbol.exchange"/></strong></div>
-                          <div><t t-esc="symbol.currency"/></div>
+                          <div><strong><t t-out="symbol.exchange"/></strong></div>
+                          <div><t t-out="symbol.currency"/></div>
                         </div>
                       </div>
                     </div>
@@ -58,15 +97,18 @@
           </div>
         </t>
       </div>
-      
+
       <style>
         .hover-shadow:hover {
           transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
           transition: all 0.2s ease;
         }
         .card {
           transition: all 0.2s ease;
+        }
+        a.text-decoration-none:hover {
+          text-decoration: none;
         }
       </style>
     </t>
